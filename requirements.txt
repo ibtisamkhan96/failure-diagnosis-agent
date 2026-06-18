@@ -1,0 +1,4 @@
+# The knowledge base and screener use the standard library only.
+# anthropic: the reasoning step. gradio: the Hugging Face Spaces UI (app.py).
+anthropic>=0.40
+gradio>=4.44
