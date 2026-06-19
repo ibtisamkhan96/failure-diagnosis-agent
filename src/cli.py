@@ -33,6 +33,8 @@ def main(argv=None):
     ap.add_argument("case", nargs="?", help="A free-text description of the failure")
     ap.add_argument("--screen", metavar="JSON", help="Run the rule-based screener on a JSON evidence object (no key needed)")
     ap.add_argument("--demo", action="store_true", help="Run the screener on a built-in cold brittle-fracture case (no key needed)")
+    ap.add_argument("--image", default=None, help="Path to a photo of the failure (the agent reads its macro features)")
+    ap.add_argument("--report", default=None, metavar="OUT.docx", help="Also save the diagnosis as a Word failure-analysis report")
     ap.add_argument("--model", default=None, help=f"Override model (default {DEFAULT_MODEL})")
     args = ap.parse_args(argv)
 
@@ -51,13 +53,20 @@ def main(argv=None):
         print(format_screen(evidence))
         return
 
-    if not args.case:
-        ap.error("provide a case description, or use --demo / --screen for the no-key screener")
+    case = args.case
+    if not case and args.image:
+        case = "Diagnose this component failure from the photo and any context I add."
+    if not case:
+        ap.error("provide a case description (or --image), or use --demo / --screen for the no-key screener")
 
-    print(f"Case: {args.case}\nModel: {args.model or DEFAULT_MODEL}\n")
-    report, _ = run_agent(args.case, model=args.model)
+    print(f"Case: {case}\nImage: {args.image or 'none'}\nModel: {args.model or DEFAULT_MODEL}\n")
+    report, _ = run_agent(case, model=args.model, image=args.image)
     print("\n" + "=" * 70 + "\nFAILURE DIAGNOSIS\n" + "=" * 70 + "\n")
     print(report)
+    if args.report and report:
+        from .report import markdown_to_docx
+        markdown_to_docx(report, args.report, used_photo=bool(args.image))
+        print(f"\nSaved Word report to {args.report}")
 
 
 if __name__ == "__main__":
